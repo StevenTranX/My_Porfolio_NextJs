@@ -1,3 +1,53 @@
+# Cách set up MUI v5 vào dự án NextJs
+
+- Ở trang chủ của MUI5 ta chỉ có thể set up với dự án ReactJs bình thường, muốn cài đặt MUI ở NextJS, ta cần phải vào trang chủ, nhưng xem set up từ codesandbox
+
+- Ở đây sẽ có các file cần chú ý đó là
+
+```ts app.ts
+import axiosClient from "@/api-client/axios-client";
+import "@/styles/globals.css";
+import type { AppProps } from "next/app";
+import { SWRConfig } from "swr";
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import { CacheProvider, EmotionCache } from "@emotion/react";
+import { theme, createEmotionCache } from "../utils/index";
+
+export interface MyAppProps extends AppProps {
+  emotionCache?: EmotionCache;
+}
+
+const clientSideEmotionCache = createEmotionCache();
+
+export default function App({
+  Component,
+  pageProps,
+  emotionCache = clientSideEmotionCache,
+}: MyAppProps) {
+  return (
+    <CacheProvider value={emotionCache}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+
+        <SWRConfig
+          value={{
+            fetcher: (url) => axiosClient.get(url),
+            shouldRetryOnError: false,
+          }}
+        >
+          <Component {...pageProps} />
+          <footer>Steven Dev 2023</footer>
+        </SWRConfig>
+      </ThemeProvider>
+    </CacheProvider>
+  );
+}
+```
+
+Bọc CacheProvider > ThemeProvider > CssBaseline ngoài thư mục app
+
+```ts
 import * as React from "react";
 import Document, {
   Html,
@@ -24,10 +74,6 @@ export default function MyDocument({ emotionStyleTags }: MyDocumentProps) {
         <meta name="theme-color" content={theme.palette.primary.main} />
         <link rel="shortcut icon" href="/favicon.ico" />
         <meta name="emotion-insertion-point" content="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap"
-          rel="stylesheet"
-        ></link>
         {emotionStyleTags}
       </Head>
       <body>
@@ -98,3 +144,52 @@ MyDocument.getInitialProps = async (ctx: DocumentContext) => {
     emotionStyleTags,
   };
 };
+```
+
+Và file \_document ở trên
+
+# Setup Custom Container cho dự án
+
+```js theme.ts
+export const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#FF6464",
+    },
+    secondary: {
+      main: "#00A8CC",
+    },
+    error: {
+      main: red.A400,
+    },
+  },
+  typography: {
+    fontFamily: roboto.style.fontFamily,
+  },
+  components: {
+    MuiContainer: {
+      styleOverrides: {
+        maxWidthSm: {
+          maxWidth: "680px",
+
+          "@media (min-width : 600px)": {
+            maxWidth: "680px",
+          },
+        },
+        maxWidthMd: {
+          maxWidth: "860px",
+
+          "@media (min-width : 900px)": {
+            maxWidth: "860px",
+          },
+        },
+      },
+      defaultProps: {
+        maxWidth: "md",
+      },
+    },
+  },
+});
+```
+
+> Ở trên là override lại container của MUIv5 , setup lại container sm là 680px thay vì 600, container md là 860 thay vì 900px
