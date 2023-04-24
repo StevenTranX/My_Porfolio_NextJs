@@ -29,16 +29,14 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
           title: "NextJs Tips | Steven Tran",
           description:
             "Step by step tips to build some simple features using NextJs",
-          url: "",
+          url: `${process.env.HOST_URL}/blog/${post.slug}` || "",
+          thumbnailUrl: post.thumbnailUrl || defaultThumbnailUrl,
         }}
-      >
-        <Container>
-          <div
-            dangerouslySetInnerHTML={{ __html: post.htmlContent || "" }}
-          ></div>
-        </Container>
-        <Script src="/prism.js" strategy="afterInteractive"></Script>
-      </SEO>
+      />
+      <Container>
+        <div dangerouslySetInnerHTML={{ __html: post.htmlContent || "" }}></div>
+      </Container>
+      <Script src="/prism.js" strategy="afterInteractive"></Script>
     </Box>
   );
 }

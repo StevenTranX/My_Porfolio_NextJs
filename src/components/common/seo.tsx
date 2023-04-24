@@ -16,7 +16,7 @@ export function SEO({ data }: SEOProps) {
   const { title, description, url, thumbnailUrl } = data;
   return (
     <Head>
-      <title>Trần Trọng Tín - Front End Developer</title>
+      <title>{title}</title>
       <meta name="title" content={title} />
       <meta name="description" content={description} />
 
