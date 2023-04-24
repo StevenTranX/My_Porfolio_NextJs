@@ -1,5 +1,5 @@
 ---
-slug: convert-markdown-to-html
+slug: authentication-vs-authorization
 title: Authentication and Authorization in NextJs ?
 author: Steven Trần
 author_title: "Fresher Dev"

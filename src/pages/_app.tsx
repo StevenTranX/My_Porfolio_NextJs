@@ -6,6 +6,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { CacheProvider, EmotionCache } from "@emotion/react";
 import { theme, createEmotionCache } from "../utils/index";
+import "@/styles/prism.css";
 
 export interface MyAppProps extends AppProps {
   emotionCache?: EmotionCache;
