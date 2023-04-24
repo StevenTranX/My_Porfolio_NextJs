@@ -18,12 +18,12 @@ This is a short description to demonstrate step by step how we can implement Con
 
 # 1.Flow của việc render những file markdown ra thành file html
 
-A. getStaticProps ()
+### 1. Viết hàm getPostList
 
          Khi mà ta lấy data từ prop trong components của file /blogs/index.tsx ta phải
             1. Read all markdown file in directory
 
-```js[class="line-numbers"]
+```js [class="line-numbers"]
 import matter from "gray-matter";
 import { Post } from "@/model";
 
@@ -51,7 +51,7 @@ export async function getPostList(): Promise<Post[]> {
 
 > Ta cần dùng gray-matter để parse Markdown -> HTML
 
-## Gray-matter có thể làm được gì ?
+### 2. Gray-matter có thể làm được gì ?
 
 ---
 
@@ -69,7 +69,7 @@ Markdown will be parsed from here
 
 Ở lần trước ta đã có fileContents - nghĩa là nội dùng file markdown, bây giờ sẽ import gray-matter và sử dụng nó
 
-```js[class="line-numbers"]
+```js [class="line-numbers"]
 import matter from "gray-matter";
 const { data, excerpt, content } = matter(fileContents, {
   excerpt_separator: "<!-- truncate -->",
@@ -100,4 +100,117 @@ return postList;
 
             3. Pass result to component props
 
-B. loop data from props and render to UI
+### 3. Sau khi hoàn thành xong hàm getPostList - trả ra data postList : { id, slug, title , ....} từ content của 1 file markdown,giờ ta sẽ dùng getStaticPaths và getStaticProps để lấy xuống và render ra HTML
+
+```tsx index.tsx
+export const getStaticProps: GetStaticProps<BlogListPageProps> = async () => {
+  // convert markdown into javascript objects
+
+  const postList = await getPostList();
+
+  return {
+    props: {
+      posts: postList,
+    },
+  };
+
+  // lấy props là  array các posts để parse ra component
+};
+```
+
+```tsx index.tsx
+<MainLayout>
+  <Container>
+    <Box component="ul" sx={{ listStyleType: "none", p: 0 }}>
+      {posts &&
+        posts.map((post) => (
+          <li key={post.id}>
+            <Link href={`/blog/${post.slug}`}>
+              <PostItem post={post}></PostItem>
+            </Link>
+            <Divider sx={{ my: 3 }} />
+          </li>
+        ))}
+    </Box>
+  </Container>
+</MainLayout>
+
+// loop array ra thành các tiêu đề bài post, tạo đường dẫn để user khi click vào bài blog thì qua trang blog detail
+```
+
+### 4. Làm sao để trang blog detail có thể hiện ra được bài post theo tương ứng với slug của user click vào ?
+
+Ở file [slug].tsx, ta sẽ dùng hàm `find()` để tìm bài post có điều kiện tương ứng với slug
+
+```ts
+const post = postList.find((x) => x.slug === context.params?.slug);
+// context.params.slug là đường dẫn hiện tại nếu như trùng với slug của bài post thì chuyển qua
+if (!post) return { notFound: true };
+```
+
+### 5. Khi đã có bài post của file markdown rồi, tuy nhiên nó chỉ là 1 chuỗi html không xuống hàng gì cả, nhìn lộn xộn thì làm sao để parse ra trên UI giống như trang markdown ta viết
+
+> Ta cần phải dùng 1 thư viện có tên là `unified` và cài thêm các plugins đi kèm như rehype, remark....
+
+> (https://github.com/unifiedjs/unified)
+
+Ở trên trang web cũng hướng dẫn code để tùy chỉnh, các thư viện cần cài cũng tương đương như trong code
+
+```js
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import rehypeDocument from "rehype-document";
+import rehypeFormat from "rehype-format";
+import rehypeStringify from "rehype-stringify";
+import { reporter } from "vfile-reporter";
+
+const file = await unified()
+  .use(remarkParse)
+  .use(remarkRehype)
+  .use(rehypeDocument, { title: "👋🌍" })
+  .use(rehypeFormat)
+  .use(rehypeStringify)
+  .process("# Hello world!");
+```
+
+Sau đó tùy chỉnh trong code của ta như sau :
+
+```js
+const file = await unified()
+  .use(remarkParse)
+  .use(remarkToc)
+  .use(remarkPrism, { plugins: ["line-numbers"] })
+  .use(remarkRehype)
+  .use(rehypeSlug)
+  .use(rehypeAutolinkHeadings, { behavior: "wrap" })
+  .use(rehypeDocument, { title: "Blog details page" })
+  .use(rehypeFormat)
+  .use(rehypeStringify)
+  .process(post.mdContent || "");
+
+post.htmlContent = file.toString();
+// sau đó cài đặt post.htmlContent thành dạng parse mới từ thư viện unified
+```
+
+> Lúc này ta đã có được htmlContent chính là từ các file markdown trong directory /blog/ giờ chỉ cần gán vào trong component
+
+```js
+<Container>
+  <div dangerouslySetInnerHTML={{ __html: post.htmlContent || "" }}></div>
+</Container>
+```
+
+### 6. làm sao để tự tùy chỉnh các dòng code, cũng như bật nightmode cho code, hay cho phép user copy code ?
+
+Lúc này ta sẽ cần sử dụng đến plugin `remarkPrism` để download các file js và css để cho phần code của chúng ta thêm màu sắc và các tùy chỉnh hơn. Ta có thể tùy chỉnh các options đó ở trang [Prismjs](https://prismjs.com/)
+
+Sau khi có 2 file css và js của prismjs thì ta sẽ import và gắn vào trong file \_app
+
+```ts _app.ts
+import "@/styles/prism.css";
+```
+
+```tsx [slug.tsx]
+<Script src="/prism.js" strategy="afterInteractive"></Script>
+```

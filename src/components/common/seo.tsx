@@ -5,7 +5,7 @@ export interface SEO_DATA {
   title: string;
   description: string;
   url: string;
-  thumbnailUrl: string;
+  thumbnailUrl?: string;
 }
 
 export interface SEOProps {
