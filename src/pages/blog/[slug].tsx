@@ -15,6 +15,7 @@ import remarkToc from "remark-toc";
 import { unified } from "unified";
 import Script from "next/script";
 import { SEO } from "@/components/common/seo";
+import { defaultThumbnailUrl } from "@/constants/path";
 
 export interface BlogDetailPageProps {
   post: Post;
